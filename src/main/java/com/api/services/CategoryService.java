@@ -2,27 +2,25 @@ package com.api.services;
 
 import com.api.entity.Category;
 import com.api.entity.Product;
+import com.api.exceptions.CategoryNotFoundException;
 import com.api.repository.CategoryRepository;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Service
 public class CategoryService {
 
-    CategoryRepository categoryRepository;
-    private final ProductService productService;
+    private final CategoryRepository categoryRepository;
 
     @Autowired
-    public CategoryService(CategoryRepository categoryRepository, ProductService productService) {
+    public CategoryService(CategoryRepository categoryRepository) {
         this.categoryRepository = categoryRepository;
-        this.productService = productService;
     }
+
+    @Autowired
+    ProductService productService;
 
     public Category saveCategory(Category category) {
         return categoryRepository.save(category);
@@ -36,28 +34,38 @@ public class CategoryService {
         return categoryRepository.findAll();
     }
 
-    public Category getCategoryById(long id){
-        return categoryRepository.findById(id).orElseThrow(ResourceNotFoundException::new);
+    public Category getCategoryById(long id) throws CategoryNotFoundException {
+        Optional<Category> category = categoryRepository.findById(id);
+        if (!category.isPresent())
+            throw new CategoryNotFoundException("Category Not Found in Category Repository CategoryId:" + id);
+
+        return category.get();
     }
 
     public Category getCategoryByName(String name){
         return categoryRepository.findByName(name);
     }
 
-    public String deleteCategory(long id){
-        categoryRepository.deleteById(id);
-        return "Category Removed ! Category ID:" + id;
+    public Category updateCategory(long id, Category category) throws CategoryNotFoundException {
+        Optional<Category> optionalCategory = categoryRepository.findById(id);
+        if (!optionalCategory.isPresent())
+            throw new CategoryNotFoundException("Category Not Found in Category Repository CategoryId:" + id + ", Provide The Correct CategoryId!");
+
+        optionalCategory.get().setName(category.getName());
+
+        return categoryRepository.save(optionalCategory.get());
     }
 
-    public Category updateCategory(Category category) {
-        Category existingCategory = getCategoryById(category.getId());
+    public String deleteCategory(long id) throws CategoryNotFoundException {
+        Optional<Category> category = categoryRepository.findById(id);
+        if (!category.isPresent())
+            throw new CategoryNotFoundException("Category Not Found in Category Repository CategoryId:" + id + ", Provide The Correct CategoryId!");
+        else if (getAllProductsByCategoryId(id).get(id).size() != 0)
+            throw new CategoryNotFoundException("Products With Category Id Are Available! CategoryId:" + id);
 
-        if (existingCategory != null){
-            existingCategory.setName(category.getName());
-        }
+        categoryRepository.deleteById(id);
 
-        assert existingCategory != null;
-        return categoryRepository.save(existingCategory);
+        return "Category Removed! Category ID:" + id;
     }
 
     public Map<Long, List<String>> getAllProductsByCategoryId(long id){

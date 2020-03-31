@@ -1,4 +1,4 @@
-package com.api.controller.ExceptionHandling;
+package com.api.exceptions;
 
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.http.HttpHeaders;

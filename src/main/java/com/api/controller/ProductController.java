@@ -1,9 +1,13 @@
 package com.api.controller;
 
 import com.api.entity.Product;
+import com.api.exceptions.CategoryNotFoundException;
+import com.api.exceptions.ProductNotFoundException;
 import com.api.services.ProductService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.List;
 
@@ -35,7 +39,11 @@ public class ProductController {
 
     @RequestMapping(value = "/findProductById/{id}", method = RequestMethod.GET, headers = "Accept=application/json")
     public Product findProductById(@PathVariable("id") long id){
-        return productService.getProductById(id);
+        try {
+            return productService.getProductById(id);
+        } catch (ProductNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }
     }
 
     @RequestMapping(value = "/findProductByName/{name}", method = RequestMethod.GET, headers = "Accept=application/json")
@@ -43,13 +51,23 @@ public class ProductController {
         return productService.getProductByName(name);
     }
 
-    @RequestMapping(value = "/updateProduct", method = RequestMethod.PUT, headers = "Accept=application/json")
-    public Product updateProduct(@RequestBody Product product){
-        return productService.updateProduct(product);
+    @RequestMapping(value = "/updateProduct/{id}", method = RequestMethod.PUT, headers = "Accept=application/json")
+    public Product updateProduct(@PathVariable("id") long id, @RequestBody Product product){
+        try {
+            return productService.updateProduct(id, product);
+        } catch (ProductNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        } catch (CategoryNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.NOT_FOUND, ex.getMessage());
+        }
     }
 
     @RequestMapping(value = "/deleteProduct/{id}", method = RequestMethod.DELETE, headers = "Accept=application/json")
     public String deleteProduct(@PathVariable("id") long id){
-        return productService.deleteProduct(id);
+        try {
+            return productService.deleteProduct(id);
+        } catch (ProductNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 }
