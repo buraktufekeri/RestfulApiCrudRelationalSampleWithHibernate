@@ -1,12 +1,17 @@
 package com.api.controller;
 
 import com.api.entity.Category;
+import com.api.entity.Product;
+import com.api.exceptions.CategoryExistsException;
 import com.api.exceptions.CategoryNotFoundException;
 import com.api.services.CategoryService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import java.util.List;
 import java.util.Map;
@@ -24,12 +29,33 @@ public class CategoryController {
 
     @RequestMapping(value = "/addCategory", method = RequestMethod.POST, headers = "Accept=application/json")
     public Category addCategory(@RequestBody Category category){
-        return categoryService.saveCategory(category);
+        try {
+            return categoryService.saveCategory(category);
+        } catch (CategoryExistsException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
+    }
+
+    @RequestMapping(value = "/addCategorySetLocationHeader", method = RequestMethod.POST, headers = "Accept=application/json")
+    public ResponseEntity<Void> addCategorySetLocationHeader(@RequestBody Category category, UriComponentsBuilder uriComponentsBuilder){
+        try {
+            categoryService.saveCategory(category);
+            HttpHeaders httpHeaders = new HttpHeaders();
+            httpHeaders.setLocation(uriComponentsBuilder.path("addCategorySetLocationHeader/{id}").buildAndExpand(category.getId()).toUri());
+
+            return new ResponseEntity<>(httpHeaders, HttpStatus.CREATED);
+        } catch (CategoryExistsException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 
     @RequestMapping(value = "/addCategories", method = RequestMethod.POST, headers = "Accept=application/json")
     public List<Category> addCategories(@RequestBody List<Category> categories){
-        return categoryService.saveCategories(categories);
+        try {
+            return categoryService.saveCategories(categories);
+        } catch (CategoryExistsException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 
     @RequestMapping(value = "/findAllCategories", method = RequestMethod.GET, headers = "Accept=application/json")
@@ -70,12 +96,12 @@ public class CategoryController {
     }
 
     @RequestMapping(value = "/findAllProductsByCategoryId/{id}", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Map<Long, List<String>> findAllProductsByCategoryId(@PathVariable("id") long id){
+    public Map<Long, List<Product>> findAllProductsByCategoryId(@PathVariable("id") long id){
         return categoryService.getAllProductsByCategoryId(id);
     }
 
     @RequestMapping(value = "/findAllProductsByCategory", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Map<Long, List<String>> findAllProductsByCategory(){
+    public Map<Long, List<Product>> findAllProductsByCategory(){
         return categoryService.getAllProductsByCategory();
     }
 }
