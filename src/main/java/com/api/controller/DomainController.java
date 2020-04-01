@@ -96,12 +96,16 @@ public class DomainController {
     }
 
     @RequestMapping(value = "/findAllDomainFeaturesByDomainId/{id}", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Map<Long, List<DomainFeature>> findAllDomainFeaturesByDomainId(@PathVariable("id") long id){
-        return domainService.getAllDomainFeaturesByDomainId(id);
+    public Map<String, List<DomainFeature>> findAllDomainFeaturesByDomainId(@PathVariable("id") long id){
+        try {
+            return domainService.getAllDomainFeaturesByDomainId(id);
+        } catch (DomainNotFoundException ex) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, ex.getMessage());
+        }
     }
 
     @RequestMapping(value = "/findAllDomainFeaturesByDomain", method = RequestMethod.GET, headers = "Accept=application/json")
-    public Map<Long, List<DomainFeature>> findAllDomainFeaturesByDomain(){
+    public Map<String, List<DomainFeature>> findAllDomainFeaturesByDomain(){
         return domainService.getAllDomainFeaturesByDomain();
     }
 }

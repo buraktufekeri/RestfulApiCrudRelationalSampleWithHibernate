@@ -66,6 +66,7 @@ public class DomainService {
         if (!optionalDomain.isPresent())
             throw new DomainNotFoundException("Domain Not Found in Domain Repository DomainId:" + id + ", Provide The Correct DomainId!");
 
+        optionalDomain.get().setGmy(domain.getGmy());
         optionalDomain.get().setName(domain.getName());
 
         return domainRepository.save(optionalDomain.get());
@@ -75,7 +76,7 @@ public class DomainService {
         Optional<Domain> domain = domainRepository.findById(id);
         if (!domain.isPresent())
             throw new DomainNotFoundException("Domain Not Found in Domain Repository DomainId:" + id + ", Provide The Correct DomainId!");
-        else if (getAllDomainFeaturesByDomainId(id).get(id).size() != 0)
+        else if (getAllDomainFeaturesByDomainId(id).get(domain.get().getName()).size() != 0)
             throw new DomainNotFoundException("DomainFeature With Domain Id Are Available! DomainId:" + id);
 
         domainRepository.deleteById(id);
@@ -83,28 +84,31 @@ public class DomainService {
         return "Domain Removed! Domain ID:" + id;
     }
 
-    public Map<Long, List<DomainFeature>> getAllDomainFeaturesByDomainId(long id){
+    public Map<String, List<DomainFeature>> getAllDomainFeaturesByDomainId(long id) throws DomainNotFoundException {
         List<DomainFeature> domainFeaturesByDomainIdList = new ArrayList<>();
-        Map<Long, List<DomainFeature>> domainFeaturesByDomainIdMap = new HashMap<>();
+        Map<String, List<DomainFeature>> domainFeaturesByDomainIdMap = new HashMap<>();
+        Optional<Domain> domain = domainRepository.findById(id);
+        if (!domain.isPresent())
+            throw new DomainNotFoundException("Domain Not Found in Domain Repository DomainId:" + id + ", Provide The Correct DomainId!");
 
         for (DomainFeature domainFeature : domainFeatureService.getDomainFeatures())
             if (domainFeature.getDomain().getId() == id)
                 domainFeaturesByDomainIdList.add(domainFeature);
 
-        domainFeaturesByDomainIdMap.put(id, domainFeaturesByDomainIdList);
+        domainFeaturesByDomainIdMap.put(domain.get().getName(), domainFeaturesByDomainIdList);
 
         return domainFeaturesByDomainIdMap;
     }
 
-    public Map<Long, List<DomainFeature>> getAllDomainFeaturesByDomain(){
+    public Map<String, List<DomainFeature>> getAllDomainFeaturesByDomain(){
         List<DomainFeature> domainFeaturesByDomainList = new ArrayList<>();;
-        Map<Long, List<DomainFeature>> domainFeaturesByDomainMap = new HashMap<>();
+        Map<String, List<DomainFeature>> domainFeaturesByDomainMap = new HashMap<>();
 
         for (int i = 0; i < getDomains().size(); i++){
             for (int j = 0; j < domainFeatureService.getDomainFeatures().size(); j++){
                 if (getDomains().get(i).getId().equals(domainFeatureService.getDomainFeatures().get(j).getDomain().getId())){
                     domainFeaturesByDomainList.add(domainFeatureService.getDomainFeatures().get(j));
-                    domainFeaturesByDomainMap.put(getDomains().get(i).getId(), domainFeaturesByDomainList);
+                    domainFeaturesByDomainMap.put(getDomains().get(i).getName(), domainFeaturesByDomainList);
                 }
             }
             domainFeaturesByDomainList = new ArrayList<>();
